@@ -37,6 +37,23 @@ after_success:
   - docker build -t kewanrashed/multi-nginx ./nginx
   - docker build -t kewanrashed/multi-server ./server
   - docker build -t kewanrashed/multi-worker ./worker
+  # Log in to the docker CLI
+
+  # Echo Docker password, is going to retrieve your Docker password 
+  # from the environment variable, and then essentially emit that
+  # over standard in as input to the next pipe side.
+
+  # We then run the Docker login command,and add in your username as a dash U flag. 
+  # And then we tell Docker login that it can expect to receive that 
+  # password over standard in.
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take those images and push them to docker hub
+  - docker push kewanrashed/multi-client
+  - docker push kewanrashed/multi-nginx  
+  - docker push kewanrashed/multi-server 
+  - docker push kewanrashed/multi-worker  
+
+
 
 
 #- echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
