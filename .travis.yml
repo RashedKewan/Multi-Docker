@@ -1,0 +1,45 @@
+# indicates that you need administrator privileges to run the tests.
+sudo: required
+
+# indicate that we are using Docker to run the tests.
+services:
+  - docker
+
+# The before_install command builds a Docker image for our React application from the detailed file named Dockerfile.dev.
+# The production Docker file installs dependencies,builds a production version of the project and then copies 
+# over just the very raw production version of our assets and so that's why we're not gonna use the production 
+# Docker file. Production Docker file does not allow us to run any tests.
+
+# The production Dockerfile is typically used to create an optimized, minimized version of the application 
+# that is ready to be deployed. This typically involves installing only the production dependencies and building
+# the application in a way that minimizes its size and resources required to run.The production Dockerfile
+# is not typically used for running tests, as its focus is on creating a lightweight and optimized production-ready
+# image. In order to run tests, a separate testing Dockerfile can be used that includes any additional 
+# dependencies or tools needed for testing.
+before_install: 
+  - docker build -t kewanrashed/complex-ci -f ./client/Dockerfile.dev ./client
+ 
+
+# The script command specifies the actions that need to be performed to run the tests of the React application. 
+# In this case, we use Docker to run the tests and run the command npm run test to run the tests and the 
+# --coverage variable to get a report on the coverage of the tests
+
+# CI=true :
+# used to make sure that the testing framework behaves appropriately in the CI 
+# environment, such as by disabling certain features that may not be needed or by 
+# outputting test results in a way that is compatible with the CI system.
+
+script: 
+  - docker run -e CI=true kewanrashed/complex-ci npm run test -- --coverage
+
+after_success: 
+  - docker build -t kewanrashed/multi-client ./client
+  - docker build -t kewanrashed/multi-nginx ./nginx
+  - docker build -t kewanrashed/multi-server ./server
+  - docker build -t kewanrashed/multi-worker ./worker
+
+
+#- echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+#- docker push kewanrashed/complex-ci:1.0.0
+#DOCKER_USERNAME=kewanrashed
+#DOCKER_PASSWORD=RASHeed17#

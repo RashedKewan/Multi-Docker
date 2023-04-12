@@ -1,0 +1,79 @@
+version: '3'
+services:
+  postgres:
+    image: 'postgres:latest'
+    environment:
+      - POSTGRES_PASSWORD=postgres_password
+
+  redis:
+    image: 'redis'
+
+  # api=server , but the reason we called it api reather 
+  # than server because nginx uses server as an operator so if 
+  # we write the following we might end up with errors:
+  # upstream server{
+  #   server server:5000;
+  # } 
+  api:
+    build: 
+      context: ./server
+      dockerfile: Dockerfile.dev
+    volumes:
+      # the node_modules directory inside the container 
+      # does not get overwritten by any node_modules 
+      # folder that we might have inside the client.
+      - /app/node_modules
+      # everything inside the 'server' directory should be 
+      # shared with the app folder inside the container.
+      - ./server:/app"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - PGDATABASE=postgres
+      - PGUSER=postgres
+      - PGPASSWORD=postgres_password
+      - PGHOST=postgres
+      - PGPORT=5432
+
+  client:
+    environment:
+      - WDS_SOCKET_PORT=0
+    build:
+      context: ./client
+      dockerfile: Dockerfile.dev
+    volumes:
+      - /app/node_modules
+      # everything inside the 'client' directory should be 
+      # shared with the app folder inside the container.
+      - ./client:/app
+
+  worker:
+    build: 
+      context: ./worker
+      dockerfile: Dockerfile.dev
+    volumes:
+      - /app/node_modules
+      # everything inside the 'worker' directory should be 
+      # shared with the app folder inside the container.
+      - ./worker:/app"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+
+  # this thing is routing traffic to our entire application.
+  nginx:
+    # make sure Nginx is always ready to go
+    restart: always
+    depends_on:
+      - api
+      - client
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile.dev
+    ports:
+    # once we start up Docker compose, we're going to 
+    # be accessing this port(3050) on local host.
+      - '3050:80'
+    
+    
+    
